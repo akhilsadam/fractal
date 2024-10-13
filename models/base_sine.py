@@ -1,37 +1,23 @@
 import torch
-import matplotlib.pyplot as plt
-import os
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
-path = 'w.pth'
-train = False# True
-
-# Training data
-# Weierstrass function
-def weierstrass(x, q=25):
-    a = 0.5
-    b = 3.0
-    result = 0
-    for k in range(q):
-        result += a**k * torch.cos(b**k * x * torch.pi / 5.0) # 2.5 is a scale factor
-    return result / 2.0 # bound to [-1, 1]
-
-# Training samples:
-# sparse x for training
-w = 0.01 # rough sample widths
-x_train = torch.arange(-1.0, 1.0, w).to(device)
-x_test = torch.arange(-1.0, 1.0, 0.1*w).to(device)
-
-y_train = weierstrass(x_train)
-y_test = weierstrass(x_test)
 
 
+class param:
+    train = True
+    q = 20
+    lr = 1e-4
+    epochs = 100000
+    
 scale_down = lambda x, a, b: (1/a) * torch.exp(-a * x) + b 
 scale_up = lambda x, a, b: (1/a) * torch.exp(a * x) + b 
 # Implicit function model
 class Weierstrass(torch.nn.Module):
     def __init__(self, w=10):
         super(Weierstrass, self).__init__()
+        
+        self.path = 'base_sine.pth'
+
+        self.param = param
+        
         self.fc1 = torch.nn.Linear(1, w)
         
         self.fc2 = torch.nn.Linear(w, w)
@@ -63,7 +49,7 @@ class Weierstrass(torch.nn.Module):
         self.qs = lambda x: scale_up(x, self.q_a, self.q_b)      
          
     def _fwd(self, u, x):
-        y = self.fc2(torch.frac(x)-0.5)
+        y = self.fc2(torch.frac(x+0.5)-0.5)
         z = torch.sin(self.fc3(u))
         return (z * y)
     
@@ -113,40 +99,3 @@ class Weierstrass(torch.nn.Module):
     # not sure how to do this, but maybe a consistency loss?
     # i.e. make sure each layer is close to the previous layer, but also close to the ground truth
     # and also always improving the prediction (monotonicity)?
-
-# training if not already saved
-model = Weierstrass().to(device)
-criterion = torch.nn.MSELoss()
-try:
-    assert os.path.exists(path)
-    model.load_state_dict(torch.load(path, weights_only=True))
-except:
-    print('Model not found or different, training...')
-    train = True
-    
-if train:            
-    q_train = 10
-    optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
-    epochs = 5000
-    for epoch in range(epochs):
-        optimizer.zero_grad()
-        loss = model.loss(x_train.unsqueeze(1), y_train.unsqueeze(1), criterion, q_train)
-        loss.backward()
-        optimizer.step()
-        if epoch % 1000 == 0 or epoch == epochs - 1:
-            print(f'Epoch {epoch}, Train Loss {loss.item()}')
-    torch.save(model.state_dict(), path)
-        
-        
-# testing and plotting
-model.eval()
-y_pred = model(x_test.unsqueeze(1), 10)
-# test error
-print(f'Test error: {criterion(y_pred, y_test.unsqueeze(1)).item()}')
-
-plt.plot(x_test.cpu().numpy(), y_test.cpu().numpy(), label='Ground truth')
-plt.scatter(x_train.cpu().numpy(), y_train.cpu().numpy(), label='Training points')
-plt.plot(x_test.cpu().numpy(), y_pred.cpu().detach().numpy(), label='Prediction')
-plt.legend()
-plt.savefig('weierstrass.png')
-plt.close()

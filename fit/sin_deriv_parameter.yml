@@ -1,0 +1,7 @@
+epochs: 1000
+lr: 0.01
+q: 4
+receptive_field: 50
+test_q: 5
+train: true
+w: 10
