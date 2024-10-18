@@ -1,0 +1,13 @@
+epochs: 2000
+lr: 0.025
+q: 4
+receptive_field: 50
+test_q: 4
+train: true
+w: 10
+z_tstat:
+- 1729218282.9058948
+- models/sin_derivative_4: a5925b5c63f771890d6466b3cb50a658
+  utils/util: 9c345d390e068c1158fb57e0faeb69d2
+- models/sin_derivative_4: 1729218282.9058948
+  utils/util: 1729218256.69325

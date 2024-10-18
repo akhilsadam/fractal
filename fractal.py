@@ -2,11 +2,13 @@ import torch
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 import os, yaml
-from util import device, consistent
+from utils.util import device
+from utils.mod_check import consistent, time_stat
+
 
 # from models.base_sine import Weierstrass
 # from models.sin_derivative_2 import Weierstrass
-from models.sin_derivative import Weierstrass
+from models.sin_derivative_4 import Weierstrass
 from parameters import Parameters
 
 fit = 'fit'
@@ -35,8 +37,11 @@ y_test = weierstrass(x_test)
 # training if not already saved
 parameters = Parameters()
 model = Weierstrass(parameters).to(device)
+
 model_path = os.path.join(fit,model.path)
 parameter_path = model_path.replace('.pth', '_parameter.yml')
+parameters.z_tstat = time_stat(Weierstrass)
+
 criterion = torch.nn.MSELoss()
 
 if not parameters.train:

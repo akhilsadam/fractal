@@ -1,5 +1,5 @@
 import torch
-from util import device
+from utils.util import device
 # anomaly check
 # torch.autograd.set_detect_anomaly(True)
 class param:
